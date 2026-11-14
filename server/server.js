@@ -13,7 +13,8 @@ const os = require('os')
 const { spawn } = require('child_process');
 const crypto = require('crypto');
 const libre = require('libreoffice-convert');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Tesseract = require('tesseract.js');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('dotenv').config();
 const normalizePath = (p) => p.replace(/\\/g, '/');
 const safeUnlink = async (p) => {
@@ -30,13 +31,11 @@ const safeUnlink = async (p) => {
   }
 };
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-
 const app = express();
-const port = 3004;
+const port = process.env.PORT || 3004;
 
 const corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   optionsSuccessStatus: 204
 };
@@ -947,51 +946,120 @@ app.post('/api/ocr-pdf', upload.single('files'), async (req, res) => {
     return res.status(400).json({ message: 'Harap unggah file PDF.' });
   }
 
-  const cleanup = () => { if (req.file) safeUnlink(req.file.path); };
-  res.on('finish', cleanup);
-  res.on('close', cleanup);
+  const tempId = crypto.randomBytes(16).toString('hex');
+  const inputPath = req.file.path;
+  const outputPathPattern = path.join(os.tmpdir(), `ocr-${tempId}-%d.jpg`);
+  const gsCommand = process.platform === 'win32' ? 'gswin64c' : 'gs';
+  let pageCount = 0;
+
+  const cleanupFiles = () => {
+    safeUnlink(inputPath);
+    for (let i = 1; i <= pageCount; i++) {
+      safeUnlink(path.join(os.tmpdir(), `ocr-${tempId}-${i}.jpg`));
+    }
+  };
+
+  res.on('finish', cleanupFiles);
+  res.on('close', cleanupFiles);
+
+  let worker = null;
 
   try {
-    const fileBuffer = await fsPromises.readFile(req.file.path);
+    const fileBuffer = await fsPromises.readFile(inputPath);
 
     if (fileBuffer.length > 20 * 1024 * 1024) {
       return res.status(400).json({ message: 'File terlalu besar untuk diproses OCR. Maksimal 20MB.' });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-3.1-pro-preview" });
+    const pdfDoc = await PDFDocument.load(fileBuffer);
+    pageCount = pdfDoc.getPageCount();
 
-    const prompt = [
-      "Tolong lakukan OCR pada dokumen PDF ini.",
-      "Ekstrak semua teks secara akurat dan pertahankan urutan bacanya.",
-      "Format hasil sebagai Markdown yang rapi: gunakan heading, paragraf, bullet list, atau tabel Markdown jika struktur dokumen mendukung.",
-      "Berikan hanya hasil OCR dalam Markdown, tanpa penjelasan tambahan."
-    ].join(" ");
+    if (pageCount === 0) {
+      return res.status(400).json({ message: 'Dokumen PDF tidak memiliki halaman.' });
+    }
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: fileBuffer.toString("base64"),
-          mimeType: "application/pdf"
+    if (pageCount > 100) {
+      return res.status(400).json({ message: 'File terlalu panjang. Maksimal 100 halaman untuk OCR.' });
+    }
+
+    await new Promise((resolve, reject) => {
+      const args = [
+        '-sDEVICE=jpeg',
+        '-r200',
+        '-dNOPAUSE',
+        '-dBATCH',
+        '-dQUIET',
+        `-sOutputFile=${normalizePath(outputPathPattern)}`,
+        normalizePath(inputPath)
+      ];
+
+      const gsProcess = spawn(gsCommand, args);
+      let errorOutput = '';
+
+      gsProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+
+      gsProcess.on('close', (code) => {
+        if (code !== 0) {
+          return reject(new Error(`Ghostscript gagal merender PDF untuk OCR: ${errorOutput}`));
         }
-      }
-    ]);
+        resolve();
+      });
 
-    const response = await result.response;
-    const markdown = response.text();
+      gsProcess.on('error', (err) => {
+        reject(new Error(`Perintah Ghostscript tidak ditemukan: ${err.message}`));
+      });
+    });
+
+    const imagePaths = [];
+    for (let i = 1; i <= pageCount; i++) {
+      const imagePath = path.join(os.tmpdir(), `ocr-${tempId}-${i}.jpg`);
+      if (fs.existsSync(imagePath)) {
+        imagePaths.push({ pageNumber: i, imagePath });
+      }
+    }
+
+    if (imagePaths.length === 0) {
+      return res.status(500).json({ message: 'Gagal merender halaman PDF menjadi gambar untuk OCR.' });
+    }
+
+    worker = await Tesseract.createWorker('ind+eng');
+    const pageResults = [];
+
+    for (const { pageNumber, imagePath } of imagePaths) {
+      const { data: { text } } = await worker.recognize(imagePath);
+      const trimmed = (text || '').trim();
+      pageResults.push({ pageNumber, text: trimmed });
+    }
+
+    const markdown = pageResults.length === 1
+      ? (pageResults[0].text || '*Tidak ada teks yang terdeteksi pada dokumen ini.*')
+      : pageResults
+          .map(({ pageNumber, text }) => `## Halaman ${pageNumber}\n\n${text || '*Tidak ada teks yang terdeteksi pada halaman ini.*'}`)
+          .join('\n\n---\n\n');
 
     res.json({
       type: 'ocr',
       markdown
     });
 
-    console.log('OCR PDF berhasil diproses dan dikirim.');
+    console.log('OCR PDF lokal berhasil diproses dan dikirim.');
 
   } catch (error) {
     console.error('Error saat memproses OCR:', error);
     if (!res.headersSent) {
-      res.status(500).json({ message: 'Gagal memproses OCR pada dokumen. Pastikan file tidak terlalu besar.' });
+      res.status(500).json({ message: 'Gagal memproses OCR pada dokumen. Pastikan Ghostscript terinstal dan file tidak rusak.' });
     }
+  } finally {
+    if (worker) {
+      try {
+        await worker.terminate();
+      } catch (termErr) {
+        console.error('Gagal menghentikan worker Tesseract:', termErr);
+      }
+    }
+    cleanupFiles();
   }
 });
 
