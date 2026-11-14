@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import axios from 'axios';
-import { Clock, Mail, MapPin, Phone, Send } from 'lucide-react';
+import { Clock, Mail, Phone, Send } from 'lucide-react';
 import Header, { SiteFooter } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -198,22 +198,6 @@ export default function Contact() {
                 </h2>
 
                 <div className="space-y-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center shrink-0">
-                      <MapPin className="w-5 h-5 text-cobalt" aria-hidden="true" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground text-sm">Alamat Institusi</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed mt-1">
-                        MAN Insan Cendekia Siak
-                        <br />
-                        Jl. Pemda No.Km 11, Perawang Bar., Kec. Tualang,
-                        <br />
-                        Kabupaten Siak, Riau 28685
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center shrink-0">
                       <Phone className="w-5 h-5 text-cobalt" aria-hidden="true" />
