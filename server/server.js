@@ -32,7 +32,7 @@ const safeUnlink = async (p) => {
 };
 
 const app = express();
-const port = process.env.PORT || 3004;
+const port = process.env.PORT || 3001;
 
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',

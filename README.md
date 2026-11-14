@@ -127,7 +127,7 @@ Isi bawaan `.env.example`:
 VITE_API_URL=/api
 ```
 
-> Catatan pengembangan lokal: jika frontend (`http://localhost:5173`) dan backend (`http://localhost:3004`) dijalankan terpisah tanpa reverse proxy, ubah nilai `VITE_API_URL` di `.env` menjadi `http://localhost:3004/api`.
+> Catatan pengembangan lokal: `vite.config.ts` sudah mengonfigurasi proxy `/api` ke `http://localhost:3001`, sehingga `VITE_API_URL=/api` dapat langsung digunakan saat menjalankan `npm run dev` pada port `5173`. Jika ingin memanggil backend secara langsung tanpa proxy, isi `VITE_API_URL=http://localhost:3001/api`.
 
 ### 2. Backend (`server/.env`)
 Salin `server/.env.example` menjadi `server/.env`:
@@ -139,7 +139,7 @@ cp server/.env.example server/.env
 Isi bawaan `server/.env.example` (tidak membutuhkan API key AI):
 
 ```env
-PORT=3004
+PORT=3001
 CORS_ORIGIN=http://localhost:5173
 ```
 
@@ -152,10 +152,10 @@ Buka dua terminal terpisah dari direktori root proyek.
 ```bash
 cd server
 npm install
-node server.js
+npm start
 ```
 
-Server akan berjalan pada `http://localhost:3004`.
+Server akan berjalan pada `http://localhost:3001`.
 
 ### Terminal 2: Jalankan Frontend (Vite)
 
