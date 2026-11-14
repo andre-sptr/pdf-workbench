@@ -4,7 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import type { AxiosProgressEvent } from 'axios';
 import Dropzone from '@/components/Dropzone';
-import { FileText, Loader2, GripVertical, Trash2 } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  GripVertical,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
 import { postFile, downloadBlob } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -48,7 +55,7 @@ export default function OrganizePdfTool() {
       }
       setThumbnails(newThumbnails);
     } catch (error) {
-      console.error("Gagal membuat thumbnail:", error);
+      console.error('Gagal membuat thumbnail:', error);
       toast({
         title: 'Gagal membaca PDF',
         description: 'File mungkin rusak atau dilindungi kata sandi.',
@@ -64,7 +71,7 @@ export default function OrganizePdfTool() {
     if (!newFiles || newFiles.length === 0) return;
 
     const selectedFile = newFiles[0];
-    if (selectedFile.type !== 'application/pdf') {
+    if (selectedFile.type !== 'application/pdf' && !selectedFile.name.toLowerCase().endsWith('.pdf')) {
       toast({
         title: 'Format tidak didukung',
         description: 'Harap unggah file PDF.',
@@ -85,21 +92,29 @@ export default function OrganizePdfTool() {
 
   const removePage = (indexToRemove: number) => {
     if (pageOrder.length <= 1) {
-      toast({ title: 'Gagal', description: 'PDF minimal harus memiliki 1 halaman.', variant: 'destructive' });
+      toast({
+        title: 'Gagal',
+        description: 'PDF minimal harus memiliki 1 halaman.',
+        variant: 'destructive',
+      });
       return;
     }
     setPageOrder(pageOrder.filter((_, i) => i !== indexToRemove));
+  };
+
+  const movePage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= pageOrder.length) return;
+    const newOrder = [...pageOrder];
+    const [movedItem] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, movedItem);
+    setPageOrder(newOrder);
   };
 
   const handleDragStart = (index: number) => setDraggedIndex(index);
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
   const handleDrop = (index: number) => {
     if (draggedIndex === null) return;
-    const newOrder = [...pageOrder];
-    const draggedItem = newOrder[draggedIndex];
-    newOrder.splice(draggedIndex, 1);
-    newOrder.splice(index, 0, draggedItem);
-    setPageOrder(newOrder);
+    movePage(draggedIndex, index);
     setDraggedIndex(null);
   };
 
@@ -145,113 +160,146 @@ export default function OrganizePdfTool() {
   const processingText = `Memproses... ${uploadProgress}%`;
 
   return (
-    <Card className="w-full shadow-none border-none">
-      <CardContent className="p-0">
-        <div className="flex flex-col min-h-[30px]" />
-
+    <Card className="w-full shadow-none border-none bg-transparent">
+      <CardContent className="p-0 space-y-6">
         {!file && (
           <Dropzone
             onFilesSelected={handleFileSelect}
             accept=".pdf"
             multiple={false}
             dropzoneText="Seret & Lepaskan file PDF di sini"
+            hint="untuk mengatur ulang atau menghapus halaman"
           />
         )}
 
         {file && (
-          <div className="mt-6 px-4">
-            <div className="flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
-              <div className="flex items-center">
-                <FileText className="w-6 h-6 text-blue-600 mr-3" />
-                <span className="font-medium text-gray-800">{file.name}</span>
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/80 p-3.5 rounded-xl border border-border">
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText className="w-5 h-5 text-cobalt shrink-0" aria-hidden="true" />
+                <span className="font-medium text-sm text-foreground truncate">
+                  {file.name}
+                </span>
               </div>
-              <Button variant="outline" size="sm" onClick={removeFile} disabled={isProcessing}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={removeFile}
+                disabled={isProcessing}
+                className="min-h-[44px] px-4 rounded-xl border-input shrink-0"
+              >
                 Ganti File
               </Button>
             </div>
 
-            <h3 className="font-semibold text-blue-900 mb-3">
-              Geser (Drag & Drop) untuk mengatur ulang urutan halaman:
-            </h3>
+            <div className="space-y-3">
+              <h2 className="text-base font-semibold text-foreground">
+                Geser atau gunakan tombol panah untuk mengatur urutan halaman ({pageOrder.length} halaman):
+              </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {pageOrder.map((originalPageIndex, currentIndex) => (
-                <div
-                  key={`page-${originalPageIndex}-${currentIndex}`}
-                  draggable
-                  onDragStart={() => handleDragStart(currentIndex)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(currentIndex)}
-                  className="relative group bg-white border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-lg overflow-hidden flex flex-col items-center justify-center cursor-move aspect-[1/1.4] transition-all shadow-sm hover:shadow-md"
-                >
-                  {/* Indikator Loading Thumbnail atau Gambar Thumbnail */}
-                  {isGeneratingThumbs && !thumbnails[originalPageIndex] ? (
-                    <div className="flex flex-col items-center justify-center w-full h-full bg-gray-50">
-                      <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-2" />
-                      <span className="text-xs text-gray-500">Memuat...</span>
-                    </div>
-                  ) : (
-                    thumbnails[originalPageIndex] && (
-                      <img
-                        src={thumbnails[originalPageIndex]}
-                        alt={`Halaman ${originalPageIndex + 1}`}
-                        className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                      />
-                    )
-                  )}
-
-                  {/* Overlay Nomor Halaman & Icon */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                    <GripVertical className="w-8 h-8 text-white mb-1 drop-shadow-md" />
-                    <span className="text-white font-bold text-sm bg-black/50 px-2 py-1 rounded">
-                      Geser
-                    </span>
-                  </div>
-
-                  {/* Label Halaman di Bagian Bawah */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 py-1.5 text-center">
-                    <span className="text-xs font-bold text-gray-700">
-                      Halaman {originalPageIndex + 1}
-                    </span>
-                  </div>
-
-                  {/* Tombol Hapus Halaman */}
-                  <button
-                    onClick={() => removePage(currentIndex)}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md z-10"
-                    title="Hapus Halaman"
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {pageOrder.map((originalPageIndex, currentIndex) => (
+                  <div
+                    key={`page-${originalPageIndex}-${currentIndex}`}
+                    draggable={!isProcessing}
+                    onDragStart={() => handleDragStart(currentIndex)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(currentIndex)}
+                    className="group bg-background border border-border hover:border-cobalt rounded-xl overflow-hidden flex flex-col cursor-move transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+                    <div className="relative aspect-[1/1.35] bg-secondary/40 flex items-center justify-center overflow-hidden">
+                      {isGeneratingThumbs && !thumbnails[originalPageIndex] ? (
+                        <div className="flex flex-col items-center justify-center w-full h-full">
+                          <Loader2 className="w-6 h-6 text-cobalt animate-spin mb-2" aria-hidden="true" />
+                          <span className="text-xs text-muted-foreground">Memuat halaman...</span>
+                        </div>
+                      ) : (
+                        thumbnails[originalPageIndex] && (
+                          <img
+                            src={thumbnails[originalPageIndex]}
+                            alt={`Pratinjau halaman ${originalPageIndex + 1}`}
+                            width={200}
+                            height={270}
+                            className="w-full h-full object-contain"
+                          />
+                        )
+                      )}
+
+                      <div className="hidden sm:flex absolute top-2 left-2 w-8 h-8 rounded-lg bg-card/90 border border-border items-center justify-center pointer-events-none">
+                        <GripVertical className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removePage(currentIndex)}
+                        disabled={isProcessing}
+                        aria-label={`Hapus halaman ${originalPageIndex + 1}`}
+                        className="absolute top-2 right-2 min-h-[44px] min-w-[44px] flex items-center justify-center bg-destructive text-destructive-foreground rounded-xl shadow-sm hover:opacity-90 transition-opacity"
+                      >
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <div className="p-2 bg-card border-t border-border flex items-center justify-between gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={isProcessing || currentIndex === 0}
+                        onClick={() => movePage(currentIndex, currentIndex - 1)}
+                        aria-label={`Geser halaman ${originalPageIndex + 1} ke kiri`}
+                        className="min-h-[44px] min-w-[44px] rounded-lg"
+                      >
+                        <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                      </Button>
+
+                      <span className="font-mono text-xs font-medium text-foreground">
+                        Hal. {originalPageIndex + 1}
+                      </span>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={isProcessing || currentIndex === pageOrder.length - 1}
+                        onClick={() => movePage(currentIndex, currentIndex + 1)}
+                        aria-label={`Geser halaman ${originalPageIndex + 1} ke kanan`}
+                        className="min-h-[44px] min-w-[44px] rounded-lg"
+                      >
+                        <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {isProcessing && (
-          <div className="mt-4 px-4">
+          <div className="space-y-2">
             <Progress value={uploadProgress} className="h-2" />
-            <p className="text-sm text-gray-500 mt-2 text-center">{processingText}</p>
+            <p className="font-mono text-xs text-muted-foreground text-center">
+              {processingText}
+            </p>
           </div>
         )}
 
-        <div className="mt-8">
-          <Button
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-lg py-6"
-            onClick={handleProcess}
-            disabled={isProcessing || !file || pageOrder.length === 0 || isGeneratingThumbs}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                {processingText}
-              </>
-            ) : (
-              'Simpan & Unduh PDF'
-            )}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          className="w-full bg-primary text-primary-foreground hover:opacity-90 min-h-[48px] py-3.5 px-6 rounded-xl font-semibold text-base shadow-sm transition-opacity"
+          onClick={handleProcess}
+          disabled={isProcessing || !file || pageOrder.length === 0 || isGeneratingThumbs}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+              {processingText}
+            </>
+          ) : (
+            'Simpan & Unduh PDF'
+          )}
+        </Button>
       </CardContent>
     </Card>
   );

@@ -13,11 +13,6 @@ const os = require('os')
 const { spawn } = require('child_process');
 const crypto = require('crypto');
 const libre = require('libreoffice-convert');
-const { PDFParse } = require('pdf-parse');
-const parsePdfText = async (buffer) => {
-  const parser = new PDFParse({ data: buffer });
-  return await parser.getText();
-};
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require('dotenv').config();
 const normalizePath = (p) => p.replace(/\\/g, '/');
@@ -930,7 +925,7 @@ app.post('/api/sign-pdf', upload.single('files'), async (req, res) => {
 });
 
 app.post('/api/ocr-pdf', upload.single('files'), async (req, res) => {
-  console.log('Menerima permintaan untuk OCR PDF dengan Gemini 3.1 Pro...');
+  console.log('Menerima permintaan untuk OCR PDF...');
 
   if (!req.file) {
     return res.status(400).json({ message: 'Harap unggah file PDF.' });
@@ -944,7 +939,7 @@ app.post('/api/ocr-pdf', upload.single('files'), async (req, res) => {
     const fileBuffer = await fsPromises.readFile(req.file.path);
 
     if (fileBuffer.length > 20 * 1024 * 1024) {
-      return res.status(400).json({ message: 'File terlalu besar untuk diproses AI. Maksimal 20MB.' });
+      return res.status(400).json({ message: 'File terlalu besar untuk diproses OCR. Maksimal 20MB.' });
     }
 
     const model = genAI.getGenerativeModel({ model: "gemini-3.1-pro-preview" });
@@ -974,12 +969,12 @@ app.post('/api/ocr-pdf', upload.single('files'), async (req, res) => {
       markdown
     });
 
-    console.log('OCR AI berhasil diproses dan dikirim.');
+    console.log('OCR PDF berhasil diproses dan dikirim.');
 
   } catch (error) {
-    console.error('Error saat OCR AI:', error);
+    console.error('Error saat memproses OCR:', error);
     if (!res.headersSent) {
-      res.status(500).json({ message: 'Gagal memproses OCR dengan AI. Pastikan file tidak terlalu besar.' });
+      res.status(500).json({ message: 'Gagal memproses OCR pada dokumen. Pastikan file tidak terlalu besar.' });
     }
   }
 });
@@ -1055,73 +1050,6 @@ app.post('/api/pdf-to-pdfa', upload.single('files'), async (req, res) => {
   }
 });
 
-app.post('/api/ai-summarize', upload.single('files'), async (req, res) => {
-  console.log('Menerima permintaan untuk Ringkasan AI...');
-
-  if (!req.file) {
-    return res.status(400).json({ message: 'Harap unggah 1 file PDF.' });
-  }
-
-  const cleanup = () => { if (req.file) safeUnlink(req.file.path); };
-  res.on('finish', cleanup);
-  res.on('close', cleanup);
-
-  const summaryLength = req.body.summaryLength || 'medium';
-  let prompt = [
-    "Tolong buatkan ringkasan dari dokumen PDF ini dalam Bahasa Indonesia.",
-    "Format jawaban sebagai Markdown yang rapi.",
-    "Gunakan struktur: # Ringkasan, ## Poin Penting, dan ## Detail Ringkasan.",
-    "Gunakan bullet list untuk poin penting."
-  ].join(" ");
-
-  if (summaryLength === 'short') prompt += " Buat ringkasan yang singkat (1-2 paragraf).";
-  else if (summaryLength === 'long') prompt += " Buat ringkasan yang detail dan panjang.";
-  else prompt += " Buat ringkasan dengan panjang sedang (3-4 paragraf).";
-
-  try {
-    const fileBuffer = await fsPromises.readFile(req.file.path);
-    if (fileBuffer.length > 20 * 1024 * 1024) {
-      return res.status(400).json({ message: 'File terlalu besar untuk diproses AI. Maksimal 20MB.' });
-    }
-    const data = await parsePdfText(fileBuffer);
-    let text = data.text;
-
-    const model = genAI.getGenerativeModel({ model: "gemini-3.1-pro-preview" });
-    let result;
-
-    if (!text || text.trim().length < 50) {
-      console.log('Teks digital sedikit, menggunakan OCR Gemini...');
-      result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: fileBuffer.toString("base64"),
-            mimeType: "application/pdf"
-          }
-        }
-      ]);
-    } else {
-      result = await model.generateContent([prompt, text]);
-    }
-
-    const response = await result.response;
-    const markdown = response.text();
-
-    res.json({
-      type: 'summary',
-      markdown
-    });
-
-    console.log('Ringkasan AI berhasil dibuat dan dikirim.');
-
-  } catch (error) {
-    console.error('Error saat membuat ringkasan AI:', error);
-    if (!res.headersSent) {
-      res.status(500).json({ message: 'Terjadi kesalahan di server saat memproses AI.' });
-    }
-  }
-});
-
 app.post('/api/organize-pdf', upload.single('file'), async (req, res) => {
   console.log('Menerima permintaan untuk mengatur ulang halaman PDF...');
 
@@ -1158,69 +1086,6 @@ app.post('/api/organize-pdf', upload.single('file'), async (req, res) => {
     console.error('Error saat mengatur PDF:', error);
     if (!res.headersSent) {
       res.status(500).send('Gagal mengatur ulang PDF. Pastikan file tidak rusak.');
-    }
-  }
-});
-
-app.post('/api/ai-translate', upload.single('files'), async (req, res) => {
-  console.log('Menerima permintaan untuk Terjemahan AI...');
-
-  if (!req.file) {
-    return res.status(400).json({ message: 'Harap unggah 1 file PDF.' });
-  }
-
-  const cleanup = () => { if (req.file) safeUnlink(req.file.path); };
-  res.on('finish', cleanup);
-  res.on('close', cleanup);
-
-  const targetLanguage = req.body.targetLanguage || 'en';
-  const prompt = [
-    `Tolong terjemahkan isi dokumen PDF ini ke bahasa dengan kode "${targetLanguage}".`,
-    "Pertahankan makna asli, gaya bahasa, dan struktur dokumen sebaik mungkin.",
-    "Format hasil terjemahan sebagai Markdown yang rapi dengan heading, paragraf, bullet list, atau tabel Markdown jika sesuai.",
-    "Berikan hanya hasil terjemahan dalam Markdown, tanpa penjelasan tambahan."
-  ].join(" ");
-
-  try {
-    const fileBuffer = await fsPromises.readFile(req.file.path);
-    if (fileBuffer.length > 20 * 1024 * 1024) {
-      return res.status(400).json({ message: 'File terlalu besar untuk diproses AI. Maksimal 20MB.' });
-    }
-    const data = await parsePdfText(fileBuffer);
-    let text = data.text;
-
-    const model = genAI.getGenerativeModel({ model: "gemini-3.1-pro-preview" });
-    let result;
-
-    if (!text || text.trim().length < 20) {
-      console.log('Teks digital tidak ditemukan, menggunakan OCR Gemini untuk terjemahan...');
-      result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: fileBuffer.toString("base64"),
-            mimeType: "application/pdf"
-          }
-        }
-      ]);
-    } else {
-      result = await model.generateContent([prompt, text]);
-    }
-
-    const response = await result.response;
-    const markdown = response.text();
-
-    res.json({
-      type: 'translation',
-      markdown
-    });
-
-    console.log('Terjemahan AI berhasil dibuat dan dikirim.');
-
-  } catch (error) {
-    console.error('Error saat menerjemahkan AI:', error);
-    if (!res.headersSent) {
-      res.status(500).json({ message: 'Terjadi kesalahan di server saat memproses AI.' });
     }
   }
 });

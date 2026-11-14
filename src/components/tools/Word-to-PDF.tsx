@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import Dropzone from '@/components/Dropzone';
-import { FileText, X, Loader2 } from 'lucide-react';
+import { FileText, Loader2, X } from 'lucide-react';
 import { usePdfTool } from '@/hooks/usePdfTool';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -13,11 +13,8 @@ const ACCEPTED_TYPES = [
 ];
 
 function validateWordFile(file: File): boolean {
-  return (
-    ACCEPTED_TYPES.includes(file.type) ||
-    file.name.endsWith('.docx') ||
-    file.name.endsWith('.doc')
-  );
+  const lower = file.name.toLowerCase();
+  return ACCEPTED_TYPES.includes(file.type) || lower.endsWith('.docx') || lower.endsWith('.doc');
 }
 
 export default function WordToPdfTool() {
@@ -35,12 +32,7 @@ export default function WordToPdfTool() {
     outputFilename: 'Hasil-Word-ke-PDFTools.pdf',
     maxFiles: 10,
     minFiles: 1,
-    allowedTypes: [
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword',
-      '.doc',
-      '.docx'
-    ],
+    allowedTypes: [...ACCEPTED_TYPES, '.doc', '.docx'],
   });
 
   const handleAddFiles = useCallback(
@@ -69,10 +61,8 @@ export default function WordToPdfTool() {
   const processingText = `Mengonversi... ${uploadProgress}%`;
 
   return (
-    <Card className="w-full shadow-none border-none">
-      <CardContent className="p-0">
-        <div className="flex flex-col min-h-[30px]" />
-
+    <Card className="w-full shadow-none border-none bg-transparent">
+      <CardContent className="p-0 space-y-6">
         {!files.length && (
           <Dropzone
             onFilesSelected={handleAddFiles}
@@ -80,30 +70,35 @@ export default function WordToPdfTool() {
             multiple
             maxFiles={10}
             dropzoneText="Seret & Lepaskan file Word (DOC/DOCX) di sini"
+            hint="maksimal 10 dokumen per proses"
           />
         )}
 
         {files.length > 0 && (
-          <div className="mt-6 px-4">
-            <h3 className="font-semibold text-blue-900 mb-3">File yang akan dikonversi ke PDF:</h3>
+          <div className="space-y-2.5">
+            <h2 className="text-base font-semibold text-foreground">
+              Dokumen Word yang Akan Dikonversi ({files.length}/10)
+            </h2>
             <ul className="space-y-2">
               {files.map((file, index) => (
                 <li
                   key={`${file.name}-${index}`}
-                  className="flex items-center p-3 bg-white border border-blue-100 rounded-lg shadow-sm"
+                  className="flex items-center gap-3 p-3.5 bg-background/80 border border-border rounded-xl"
                 >
-                  <FileText className="w-6 h-6 text-blue-600 mr-4" />
-                  <span className="flex-grow text-sm font-medium text-gray-800 truncate">
+                  <FileText className="w-5 h-5 text-cobalt shrink-0" aria-hidden="true" />
+                  <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">
                     {file.name}
                   </span>
                   <Button
+                    type="button"
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => removeFile(index)}
-                    className="p-1 h-auto"
+                    className="min-h-[44px] min-w-[44px] rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
                     disabled={isProcessing}
+                    aria-label={`Hapus file ${file.name}`}
                   >
-                    <X className="w-5 h-5 text-red-500" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </Button>
                 </li>
               ))}
@@ -112,28 +107,29 @@ export default function WordToPdfTool() {
         )}
 
         {isProcessing && (
-          <div className="mt-4 px-4">
+          <div className="space-y-2">
             <Progress value={uploadProgress} className="h-2" />
-            <p className="text-sm text-gray-500 mt-2 text-center">{processingText}</p>
+            <p className="font-mono text-xs text-muted-foreground text-center">
+              {processingText}
+            </p>
           </div>
         )}
 
-        <div className="mt-8">
-          <Button
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-lg py-6"
-            onClick={processFiles}
-            disabled={isProcessing || files.length === 0}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                {processingText}
-              </>
-            ) : (
-              'Konversi ke PDF Sekarang'
-            )}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          className="w-full bg-primary text-primary-foreground hover:opacity-90 min-h-[48px] py-3.5 px-6 rounded-xl font-semibold text-base shadow-sm transition-opacity"
+          onClick={processFiles}
+          disabled={isProcessing || files.length === 0}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+              {processingText}
+            </>
+          ) : (
+            'Konversi ke PDF Sekarang'
+          )}
+        </Button>
       </CardContent>
     </Card>
   );

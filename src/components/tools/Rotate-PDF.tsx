@@ -5,23 +5,25 @@ import { Progress } from '@/components/ui/progress';
 import type { AxiosProgressEvent } from 'axios';
 import Dropzone from '@/components/Dropzone';
 import { FileText, X, Loader2 } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { usePdfTool } from '@/hooks/usePdfTool';
 import { postFile, downloadBlob } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 
+const ROTATION_OPTIONS = [
+  { value: '90', id: 'r1', label: '90 Derajat' },
+  { value: '180', id: 'r2', label: '180 Derajat' },
+  { value: '270', id: 'r3', label: '270 Derajat' },
+];
+
 export default function RotatePdfTool() {
-  const [angle, setAngle] = useState<string>("90");
+  const [angle, setAngle] = useState<string>('90');
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
-  const {
-    files,
-    addFiles,
-    removeFile,
-  } = usePdfTool({
+  const { files, addFiles, removeFile } = usePdfTool({
     endpoint: '/rotate-pdf',
     outputFilename: 'Hasil-Putar-PDFTools.pdf',
     maxFiles: 1,
@@ -31,9 +33,9 @@ export default function RotatePdfTool() {
   const handleRotatePdf = useCallback(async () => {
     if (files.length === 0) {
       toast({
-        title: "File tidak ditemukan",
-        description: "Silakan pilih 1 file PDF untuk diputar.",
-        variant: "destructive",
+        title: 'File tidak ditemukan',
+        description: 'Silakan pilih 1 file PDF untuk diputar.',
+        variant: 'destructive',
       });
       return;
     }
@@ -79,10 +81,8 @@ export default function RotatePdfTool() {
   const processingText = `Memutar... ${uploadProgress}%`;
 
   return (
-    <Card className="w-full shadow-none border-none">
-      <CardContent className="p-0">
-        <div className="flex flex-col min-h-[30px]" />
-
+    <Card className="w-full shadow-none border-none bg-transparent">
+      <CardContent className="p-0 space-y-6">
         {!files.length && (
           <Dropzone
             onFilesSelected={addFiles}
@@ -94,74 +94,86 @@ export default function RotatePdfTool() {
         )}
 
         {files.length > 0 && (
-          <div className="mt-6 px-4 space-y-6">
-            <div>
-              <h3 className="font-semibold text-blue-900 mb-3">File yang akan diputar:</h3>
-              <div className="flex items-center p-3 bg-white border border-blue-100 rounded-lg shadow-sm">
-                <FileText className="w-6 h-6 text-blue-600 mr-4" />
-                <span className="flex-grow text-sm font-medium text-gray-800 truncate">
+          <div className="space-y-6">
+            <div className="space-y-2.5">
+              <h2 className="text-base font-semibold text-foreground">
+                File yang Akan Diputar
+              </h2>
+              <div className="flex items-center gap-3 p-3.5 bg-background/80 border border-border rounded-xl">
+                <FileText className="w-5 h-5 text-cobalt shrink-0" aria-hidden="true" />
+                <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">
                   {files[0].name}
                 </span>
                 <Button
+                  type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => removeFile(0)}
-                  className="p-1 h-auto"
+                  className="min-h-[44px] min-w-[44px] rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
                   disabled={isProcessing}
+                  aria-label={`Hapus file ${files[0].name}`}
                 >
-                  <X className="w-5 h-5 text-red-500" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </Button>
               </div>
             </div>
 
-            <div>
-              <h3 className="font-semibold text-blue-900 mb-3">Pilih Derajat Putaran:</h3>
+            <div className="space-y-3">
+              <p className="text-base font-semibold text-foreground">
+                Pilih Derajat Putaran
+              </p>
               <RadioGroup
                 value={angle}
                 onValueChange={setAngle}
-                className="flex space-x-4"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3"
                 disabled={isProcessing}
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="90" id="r1" />
-                  <Label htmlFor="r1">90 Derajat</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="180" id="r2" />
-                  <Label htmlFor="r2">180 Derajat</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="270" id="r3" />
-                  <Label htmlFor="r3">270 Derajat</Label>
-                </div>
+                {ROTATION_OPTIONS.map((option) => {
+                  const isSelected = angle === option.value;
+                  return (
+                    <Label
+                      key={option.id}
+                      htmlFor={option.id}
+                      className={`min-h-[48px] px-4 py-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'border-cobalt bg-cobalt/[0.08] text-foreground font-semibold'
+                          : 'border-border bg-background/70 text-foreground hover:border-foreground/40'
+                      }`}
+                    >
+                      <RadioGroupItem value={option.value} id={option.id} />
+                      <span>{option.label}</span>
+                    </Label>
+                  );
+                })}
               </RadioGroup>
             </div>
           </div>
         )}
 
         {isProcessing && (
-          <div className="mt-4 px-4">
+          <div className="space-y-2">
             <Progress value={uploadProgress} className="h-2" />
-            <p className="text-sm text-gray-500 mt-2 text-center">{processingText}</p>
+            <p className="font-mono text-xs text-muted-foreground text-center">
+              {processingText}
+            </p>
           </div>
         )}
 
-        <div className="mt-8">
-          <Button
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-lg py-6"
-            onClick={handleRotatePdf}
-            disabled={isProcessing || files.length === 0}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                {processingText}
-              </>
-            ) : (
-              'Putar PDF Sekarang'
-            )}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          className="w-full bg-primary text-primary-foreground hover:opacity-90 min-h-[48px] py-3.5 px-6 rounded-xl font-semibold text-base shadow-sm transition-opacity"
+          onClick={handleRotatePdf}
+          disabled={isProcessing || files.length === 0}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+              {processingText}
+            </>
+          ) : (
+            'Putar PDF Sekarang'
+          )}
+        </Button>
       </CardContent>
     </Card>
   );

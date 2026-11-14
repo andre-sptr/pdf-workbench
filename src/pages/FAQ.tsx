@@ -1,174 +1,162 @@
-import Header from '@/components/Header';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { HelpCircle, Shield, Zap, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ShieldCheck, Upload, UserCheck } from 'lucide-react';
+import Header, { SiteFooter } from '@/components/Header';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
-const faqs = [
+const FAQS = [
   {
-    question: "Apakah file saya disimpan di server?",
-    answer: "Tidak, file Anda tidak disimpan di server kami. Semua file diproses secara lokal dan otomatis dihapus setelah 30 menit untuk menjaga privasi dan keamanan data Anda."
+    question: 'Apakah file saya disimpan permanen di server?',
+    answer:
+      'Tidak. Berkas yang Anda unggah hanya disimpan sementara di direktori temporer sistem selama proses konversi atau penyuntingan berjalan, lalu langsung dihapus otomatis segera setelah respons dikirim.',
   },
   {
-    question: "Apakah layanan ini benar-benar gratis?",
-    answer: "Ya, PDF Tools sepenuhnya gratis untuk semua pengguna. Tidak ada biaya tersembunyi atau batasan penggunaan. Ini adalah komitmen kami untuk mendukung pendidikan di Indonesia."
+    question: 'Apakah layanan ini benar-benar gratis?',
+    answer:
+      'Ya, PDF Tools sepenuhnya gratis untuk semua pengguna tanpa biaya langganan, tanpa iklan mengganggu, dan tanpa tanda air (watermark) tambahan pada hasil dokumen.',
   },
   {
-    question: "Format file apa saja yang didukung?",
-    answer: "Kami mendukung file PDF untuk semua tool pengolahan. Untuk konversi, kami mendukung Word (.docx), Excel (.xlsx), PowerPoint (.pptx), dan berbagai format gambar (JPG, JPEG, PNG)."
+    question: 'Format file apa saja yang didukung?',
+    answer:
+      'Kami mendukung berkas PDF untuk seluruh alat pengeditan, keamanan, dan OCR. Untuk konversi antarformat, platform mendukung dokumen Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx), dan gambar (JPG, JPEG, PNG).',
   },
   {
-    question: "Berapa ukuran maksimal file yang bisa diupload?",
-    answer: "Saat ini, ukuran maksimal file adalah 20MB per file. Untuk file yang lebih besar, kami sarankan untuk mengompres terlebih dahulu atau memisahkan menjadi beberapa bagian."
+    question: 'Berapa ukuran maksimal file yang bisa diunggah?',
+    answer:
+      'Batas maksimal unggahan standar pada alat pengolahan dan konversi PDF adalah 50 MB per permintaan, sedangkan untuk pemrosesan OCR batas maksimalnya adalah 20 MB per file.',
   },
   {
-    question: "Apakah bisa digunakan di ponsel?",
-    answer: "Ya, PDF Tools dirancang responsif dan dapat digunakan dengan nyaman di ponsel, tablet, maupun desktop. Semua fitur tersedia di semua perangkat."
+    question: 'Apakah bisa digunakan di ponsel atau tablet?',
+    answer:
+      'Ya, antarmuka PDF Tools dirancang responsif untuk layar ponsel, tablet, maupun desktop sehingga seluruh tombol unggah, formulir, dan daftar alat tetap nyaman dijangkau.',
   },
   {
-    question: "Bagaimana keamanan data dijamin?",
-    answer: "Kami menggunakan koneksi HTTPS terenkripsi, pemrosesan file secara lokal, dan penghapusan otomatis file setelah 30 menit. Tidak ada data yang disimpan atau dibagikan ke pihak ketiga."
+    question: 'Apakah perlu mendaftar akun terlebih dahulu?',
+    answer:
+      'Tidak. Anda dapat langsung membuka halaman alat yang dibutuhkan, mengunggah dokumen, dan mengunduh hasilnya tanpa pendaftaran akun atau login.',
   },
   {
-    question: "Apakah perlu mendaftar akun?",
-    answer: "Tidak, Anda tidak perlu mendaftar akun atau memberikan informasi pribadi. Cukup buka website dan langsung gunakan semua fitur yang tersedia."
+    question: 'Bagaimana jika terjadi error saat memproses file?',
+    answer:
+      'Pastikan format dan ukuran file sesuai batas yang diizinkan serta dokumen tidak rusak (corrupt). Untuk dokumen terenkripsi, gunakan alat Buka Kunci PDF terlebih dahulu sebelum menjalankan konversi atau OCR.',
   },
   {
-    question: "Bagaimana jika terjadi error saat memproses file?",
-    answer: "Jika terjadi error, coba refresh halaman dan upload ulang file. Pastikan file tidak corrupt dan format sesuai. Jika masalah berlanjut, hubungi kami melalui halaman kontak."
+    question: 'Berapa banyak file yang bisa digabungkan sekaligus?',
+    answer:
+      'Alat Gabungkan PDF mendukung penggabungan minimal 2 file hingga maksimal 20 file PDF dalam satu kali proses. Anda juga dapat mengatur ulang urutannya sebelum menggabungkan.',
   },
-  {
-    question: "Apakah ada batasan jumlah file yang bisa diproses?",
-    answer: "Tidak ada batasan khusus untuk jumlah file. Namun, untuk performa optimal, kami sarankan memproses maksimal 10 file sekaligus untuk tool gabungkan PDF."
-  },
-  {
-    question: "Bisakah digunakan offline?",
-    answer: "Saat ini PDF Tools memerlukan koneksi internet untuk berfungsi. Namun, kami sedang mengembangkan fitur offline (PWA) yang akan tersedia dalam update mendatang."
-  }
 ];
 
 export default function FAQ() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="hm-canvas flex flex-col">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-700 to-blue-600 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <HelpCircle className="w-20 h-20 mx-auto mb-6 text-yellow-300" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      <main id="main-content" className="flex-1 py-12 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl space-y-14">
+          {/* Editorial Header */}
+          <section className="space-y-4 border-b border-border pb-10">
+            <p className="font-mono text-xs uppercase tracking-wider text-cobalt">
+              DOKUMENTASI PENGGUNA // FAQ
+            </p>
+            <h1 className="font-display font-normal text-[clamp(2.25rem,5vw,4rem)] leading-[1.06] tracking-[-0.02em] text-foreground max-w-[20ch]">
               Pertanyaan yang Sering Diajukan
             </h1>
-            <p className="text-xl text-blue-100 leading-relaxed">
-              Temukan jawaban atas pertanyaan umum tentang PDF Tools
+            <p className="text-base sm:text-lg text-muted-foreground max-w-[58ch] leading-relaxed">
+              Penjelasan ringkas seputar keamanan berkas, batas ukuran unggahan, dukungan format, dan cara kerja PDF Tools.
             </p>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Quick Info Cards */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-              <Card className="text-center border-green-200 bg-green-50">
-                <CardHeader>
-                  <Shield className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                  <CardTitle className="text-green-800">100% Aman</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-green-700">
-                    File otomatis dihapus setelah 30 menit. Tidak ada data yang disimpan.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="text-center border-blue-200 bg-blue-50">
-                <CardHeader>
-                  <Zap className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                  <CardTitle className="text-blue-800">Gratis Selamanya</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-blue-700">
-                    Tidak ada biaya tersembunyi. Semua fitur gratis untuk semua pengguna.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="text-center border-purple-200 bg-purple-50">
-                <CardHeader>
-                  <Users className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-                  <CardTitle className="text-purple-800">Untuk Semua</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-purple-700">
-                    Tidak perlu registrasi. Langsung gunakan semua fitur yang tersedia.
-                  </p>
-                </CardContent>
-              </Card>
+          {/* Architectural Summary Strip */}
+          <section aria-label="Ringkasan kebijakan" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="hm-sheet p-5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-muted-foreground">01 // PRIVASI</span>
+                <ShieldCheck className="w-5 h-5 text-cobalt" aria-hidden="true" />
+              </div>
+              <h2 className="text-base font-semibold text-foreground">Penghapusan Otomatis</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Berkas sementara dihapus dari server segera setelah proses selesai dikirim.
+              </p>
             </div>
 
-            {/* FAQ Accordion */}
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold text-blue-900 text-center mb-12">
-                Jawaban Lengkap untuk Pertanyaan Anda
-              </h2>
-
-              <Card className="shadow-lg border-blue-200">
-                <CardContent className="p-6">
-                  <Accordion type="single" collapsible className="w-full">
-                    {faqs.map((faq, index) => (
-                      <AccordionItem key={index} value={`item-${index}`}>
-                        <AccordionTrigger className="text-left font-semibold text-blue-900 hover:text-blue-700">
-                          {faq.question}
-                        </AccordionTrigger>
-                        <AccordionContent className="text-gray-600 leading-relaxed pt-2">
-                          {faq.answer}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </CardContent>
-              </Card>
+            <div className="hm-sheet p-5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-muted-foreground">02 // KAPASITAS</span>
+                <Upload className="w-5 h-5 text-cobalt" aria-hidden="true" />
+              </div>
+              <h2 className="text-base font-semibold text-foreground">Hingga 50 MB</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Mendukung berkas hingga 50 MB untuk alat PDF dan 20 MB untuk fitur OCR.
+              </p>
             </div>
 
-            {/* Contact CTA */}
-            <div className="text-center mt-16">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-8 text-white">
-                <h3 className="text-2xl font-bold mb-4">
-                  Masih Ada Pertanyaan?
-                </h3>
-                <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-                  Jika Anda tidak menemukan jawaban yang dicari, jangan ragu untuk
-                  menghubungi tim kami. Kami siap membantu Anda.
-                </p>
-                <a
-                  href="/contact"
-                  className="inline-flex items-center px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
-                >
-                  Hubungi Kami
-                </a>
+            <div className="hm-sheet p-5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-muted-foreground">03 // AKSES</span>
+                <UserCheck className="w-5 h-5 text-cobalt" aria-hidden="true" />
+              </div>
+              <h2 className="text-base font-semibold text-foreground">Tanpa Akun</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Seluruh 18 alat tersedia langsung di peramban tanpa registrasi pengguna.
+              </p>
+            </div>
+          </section>
+
+          {/* Accordion Frame */}
+          <section aria-label="Daftar pertanyaan umum">
+            <div className="hm-frame">
+              <div className="hm-sheet p-4 sm:p-8">
+                <Accordion type="single" collapsible className="w-full divide-y divide-border">
+                  {FAQS.map((faq, index) => (
+                    <AccordionItem
+                      key={faq.question}
+                      value={`item-${index}`}
+                      className="border-none py-1"
+                    >
+                      <AccordionTrigger className="min-h-[52px] text-left font-semibold text-base text-foreground hover:text-cobalt hover:no-underline gap-4 py-4">
+                        <span className="flex items-baseline gap-3 sm:gap-4">
+                          <span className="font-mono text-xs text-cobalt shrink-0">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <span>{faq.question}</span>
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm sm:text-base text-muted-foreground leading-relaxed pl-7 sm:pl-9 pb-5">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Footer */}
-      <footer className="bg-blue-900 text-white py-4">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-blue-200">
-            <a
-              href="https://andresptr.site"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-white hover:underline"
+          {/* Contact CTA */}
+          <section className="hm-sheet p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <h2 className="font-display text-2xl text-foreground">
+                Masih Ada Pertanyaan Teknis?
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-[50ch]">
+                Kirimkan pertanyaan atau laporan kendala format dokumen Anda melalui halaman kontak.
+              </p>
+            </div>
+            <Link
+              to="/contact"
+              className="min-h-[48px] px-7 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm inline-flex items-center justify-center hover:opacity-90 transition-opacity shrink-0"
             >
-              © {new Date().getFullYear()} Andre Saputra
-            </a>.
-          </p>
+              Hubungi Kami
+            </Link>
+          </section>
         </div>
-      </footer>
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }

@@ -39,51 +39,70 @@ export default function MarkdownResultPanel({
   };
 
   return (
-    <div className="mt-6 rounded-lg border border-blue-100 bg-white shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-blue-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-base font-semibold text-blue-950">{title}</h3>
+    <div className="mt-8 rounded-2xl border border-border bg-background/60 overflow-hidden">
+      <div className="flex flex-col gap-3 border-b border-border bg-card p-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <span className="font-mono text-[11px] uppercase tracking-wider text-cobalt">
+            HASIL PEMROSESAN
+          </span>
+          <h3 className="text-base sm:text-lg font-semibold text-foreground">{title}</h3>
+        </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCopy}
+            className="min-h-[44px] px-4 rounded-xl border-input"
+          >
             {copied ? (
-              <Check className="mr-2 h-4 w-4" />
+              <Check className="mr-2 h-4 w-4 text-cobalt" aria-hidden="true" />
             ) : (
-              <Copy className="mr-2 h-4 w-4" />
+              <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
             )}
-            Salin
+            {copied ? 'Tersalin' : 'Salin Teks'}
           </Button>
-          <Button variant="outline" size="sm" onClick={onReset}>
-            <RotateCcw className="mr-2 h-4 w-4" />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onReset}
+            className="min-h-[44px] px-4 rounded-xl border-input"
+          >
+            <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
             Reset
           </Button>
         </div>
       </div>
 
-      <ScrollArea className="h-[520px]">
-        <div className="p-5">
+      <ScrollArea className="h-[520px] bg-card">
+        <div className="p-5 sm:p-6">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
               h1: ({ children }) => (
-                <h1 className="mb-4 text-2xl font-bold text-slate-950">{children}</h1>
+                <h1 className="mb-4 font-display text-2xl sm:text-3xl font-normal text-foreground">
+                  {children}
+                </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="mb-3 mt-6 text-xl font-semibold text-slate-900">{children}</h2>
+                <h2 className="mb-3 mt-6 font-display text-xl sm:text-2xl font-normal text-foreground">
+                  {children}
+                </h2>
               ),
               h3: ({ children }) => (
-                <h3 className="mb-2 mt-5 text-lg font-semibold text-slate-900">{children}</h3>
+                <h3 className="mb-2 mt-5 text-lg font-semibold text-foreground">{children}</h3>
               ),
               p: ({ children }) => (
-                <p className="mb-4 leading-7 text-slate-700">{children}</p>
+                <p className="mb-4 leading-7 text-foreground/90 max-w-[70ch]">{children}</p>
               ),
               ul: ({ children }) => (
-                <ul className="mb-4 ml-5 list-disc space-y-2 text-slate-700">{children}</ul>
+                <ul className="mb-4 ml-5 list-disc space-y-2 text-foreground/90">{children}</ul>
               ),
               ol: ({ children }) => (
-                <ol className="mb-4 ml-5 list-decimal space-y-2 text-slate-700">{children}</ol>
+                <ol className="mb-4 ml-5 list-decimal space-y-2 text-foreground/90">{children}</ol>
               ),
               li: ({ children }) => <li className="pl-1 leading-7">{children}</li>,
               blockquote: ({ children }) => (
-                <blockquote className="mb-4 border-l-4 border-blue-200 pl-4 text-slate-600">
+                <blockquote className="mb-4 border-l-4 border-cobalt pl-4 text-muted-foreground">
                   {children}
                 </blockquote>
               ),
@@ -93,20 +112,20 @@ export default function MarkdownResultPanel({
                 </div>
               ),
               th: ({ children }) => (
-                <th className="border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-900">
+                <th className="border border-border bg-secondary px-3 py-2 font-semibold text-foreground">
                   {children}
                 </th>
               ),
               td: ({ children }) => (
-                <td className="border border-slate-200 px-3 py-2 text-slate-700">{children}</td>
+                <td className="border border-border px-3 py-2 text-foreground/90">{children}</td>
               ),
               code: ({ children }) => (
-                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-900">
+                <code className="rounded bg-secondary px-1.5 py-0.5 font-mono text-sm text-foreground">
                   {children}
                 </code>
               ),
               pre: ({ children }) => (
-                <pre className="mb-4 overflow-x-auto rounded-md bg-slate-950 p-4 text-sm text-slate-50">
+                <pre className="mb-4 overflow-x-auto rounded-xl border border-border bg-secondary p-4 font-mono text-sm text-foreground">
                   {children}
                 </pre>
               ),

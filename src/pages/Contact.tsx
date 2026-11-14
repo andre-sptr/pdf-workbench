@@ -1,32 +1,39 @@
-import { useState } from 'react';
-import Header from '@/components/Header';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Mail, MapPin, Phone, Send, MessageCircle, Clock } from 'lucide-react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import axios from 'axios';
+import { Clock, Mail, MapPin, Phone, Send } from 'lucide-react';
+import Header, { SiteFooter } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
+interface SubmissionState {
+  success: boolean | null;
+  message: string;
+}
 
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [result, setResult] = useState({ success: null, message: '' });;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState<SubmissionState>({
+    success: null,
+    message: '',
+  });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setResult({ success: null, message: '' });
 
     const dataToSend = {
       ...formData,
-      access_key: "d8f6ca40-63ed-4e63-8466-9e197cc1a546",
-      from_name: "Pesan dari Website PDF Tools",
+      access_key: 'd8f6ca40-63ed-4e63-8466-9e197cc1a546',
+      from_name: 'Pesan dari Website PDF Tools',
       subject: `Pesan Baru: ${formData.subject}`,
     };
 
@@ -34,84 +41,97 @@ export default function Contact() {
       const response = await axios.post('https://api.web3forms.com/submit', dataToSend);
 
       if (response.data.success) {
-        setResult({ success: true, message: "Pesan berhasil terkirim! Terima kasih." });
+        setResult({
+          success: true,
+          message: 'Pesan berhasil terkirim. Terima kasih telah menghubungi kami.',
+        });
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        setResult({ success: false, message: "Terjadi kesalahan. Silakan coba lagi." });
+        setResult({
+          success: false,
+          message: 'Terjadi kesalahan saat mengirim pesan. Silakan coba lagi.',
+        });
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      setResult({ success: false, message: "Terjadi kesalahan server. Silakan coba lagi nanti." });
+      console.error('Error submitting form:', error);
+      setResult({
+        success: false,
+        message: 'Terjadi kesalahan server. Silakan coba beberapa saat lagi.',
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="hm-canvas flex flex-col">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-700 to-blue-600 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <MessageCircle className="w-20 h-20 mx-auto mb-6 text-yellow-300" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      <main id="main-content" className="flex-1 py-12 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl space-y-12">
+          {/* Editorial Header */}
+          <section className="space-y-4 border-b border-border pb-10">
+            <p className="font-mono text-xs uppercase tracking-wider text-cobalt">
+              DUKUNGAN & UMPAN BALIK
+            </p>
+            <h1 className="font-display font-normal text-[clamp(2.25rem,5vw,4rem)] leading-[1.06] tracking-[-0.02em] text-foreground">
               Hubungi Kami
             </h1>
-            <p className="text-xl text-blue-100 leading-relaxed">
-              Kami siap membantu Anda dengan pertanyaan, saran, atau masalah teknis
+            <p className="text-base sm:text-lg text-muted-foreground max-w-[58ch] leading-relaxed">
+              Sampaikan pertanyaan teknis, saran fitur pengolahan dokumen, atau laporan kendala melalui formulir di bawah ini.
             </p>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Contact Form */}
-              <Card className="shadow-lg border-blue-200">
-                <CardHeader>
-                  <CardTitle className="text-2xl text-blue-900 flex items-center">
-                    <Send className="w-6 h-6 mr-3" />
-                    Kirim Pesan
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            {/* Form Frame */}
+            <div className="lg:col-span-7">
+              <div className="hm-frame">
+                <div className="hm-sheet p-6 sm:p-8 space-y-6">
+                  <div className="flex items-center gap-3 border-b border-border pb-4">
+                    <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-cobalt">
+                      <Send className="w-5 h-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h2 className="font-display text-2xl text-foreground">Kirim Pesan</h2>
+                      <p className="text-xs text-muted-foreground">
+                        Seluruh kolom bertanda wajib diisi.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Nama Lengkap</Label>
                         <Input
                           id="name"
                           name="name"
                           type="text"
-                          placeholder="Masukkan nama lengkap Anda"
+                          placeholder="Nama Anda"
                           value={formData.name}
                           onChange={handleChange}
                           required
-                          className="border-blue-200 focus:border-blue-500"
+                          className="min-h-[44px] bg-background border-input rounded-xl"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">Alamat Email</Label>
                         <Input
                           id="email"
                           name="email"
                           type="email"
-                          placeholder="nama@gmail.com"
+                          placeholder="email@contoh.com"
                           value={formData.email}
                           onChange={handleChange}
                           required
-                          className="border-blue-200 focus:border-blue-500"
+                          className="min-h-[44px] bg-background border-input rounded-xl"
                         />
                       </div>
                     </div>
@@ -126,7 +146,7 @@ export default function Contact() {
                         value={formData.subject}
                         onChange={handleChange}
                         required
-                        className="border-blue-200 focus:border-blue-500"
+                        className="min-h-[44px] bg-background border-input rounded-xl"
                       />
                     </div>
 
@@ -135,144 +155,141 @@ export default function Contact() {
                       <Textarea
                         id="message"
                         name="message"
-                        placeholder="Tuliskan pesan, pertanyaan, atau saran Anda di sini..."
+                        placeholder="Tuliskan detail pertanyaan atau saran Anda di sini..."
                         value={formData.message}
                         onChange={handleChange}
                         required
                         rows={6}
-                        className="border-blue-200 focus:border-blue-500"
+                        className="bg-background border-input rounded-xl"
                       />
                     </div>
 
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="w-full bg-primary text-primary-foreground hover:opacity-90 min-h-[48px] py-3.5 px-6 rounded-xl font-semibold text-base shadow-sm transition-opacity"
                     >
-                      {isSubmitting ? 'Mengirim...' : 'Kirim Pesan'}
+                      {isSubmitting ? 'Mengirim Pesan...' : 'Kirim Pesan'}
                     </Button>
-                    {result.message && (
-                      <p className={`text-center mt-4 text-sm font-medium ${result.success ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                        {result.message}
-                      </p>
-                    )}
+
+                    <div role="status" aria-live="polite">
+                      {result.message && (
+                        <p
+                          className={`p-3.5 rounded-xl border text-sm font-medium text-center ${
+                            result.success
+                              ? 'border-cobalt bg-cobalt/10 text-foreground'
+                              : 'border-destructive bg-destructive/10 text-destructive'
+                          }`}
+                        >
+                          {result.message}
+                        </p>
+                      )}
+                    </div>
                   </form>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </div>
 
-              {/* Contact Information */}
-              <div className="space-y-8">
-                <Card className="border-blue-200 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-2xl text-blue-900">
-                      Informasi Kontak
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-blue-900 mb-1">Alamat</h3>
-                        <p className="text-gray-600 leading-relaxed">
-                          MAN Insan Cendekia Siak<br />
-                          Jl. Pemda No.Km 11, Perawang Bar., Kec. Tualang,<br />
-                          Kabupaten Siak, Riau 28685
-                        </p>
-                      </div>
-                    </div>
+            {/* Contact Directory Ledger */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="hm-sheet p-6 sm:p-8 space-y-6">
+                <h2 className="font-display text-2xl text-foreground border-b border-border pb-4">
+                  Informasi Kontak
+                </h2>
 
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Phone className="w-6 h-6 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-blue-900 mb-1">Telepon</h3>
-                        <p className="text-gray-600">
-                          +62 823-8702-5429 (WhatsApp)
-                        </p>
-                      </div>
+                <div className="space-y-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center shrink-0">
+                      <MapPin className="w-5 h-5 text-cobalt" aria-hidden="true" />
                     </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-sm">Alamat Institusi</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed mt-1">
+                        MAN Insan Cendekia Siak
+                        <br />
+                        Jl. Pemda No.Km 11, Perawang Bar., Kec. Tualang,
+                        <br />
+                        Kabupaten Siak, Riau 28685
+                      </p>
+                    </div>
+                  </div>
 
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-6 h-6 text-red-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-blue-900 mb-1">Email</h3>
-                        <p className="text-gray-600">
-                          andresaputra07012019@gmail.com
-                        </p>
-                      </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center shrink-0">
+                      <Phone className="w-5 h-5 text-cobalt" aria-hidden="true" />
                     </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-sm">Telepon / WhatsApp</h3>
+                      <p className="font-mono text-sm text-muted-foreground mt-1">
+                        +62 823-8702-5429
+                      </p>
+                    </div>
+                  </div>
 
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-6 h-6 text-yellow-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-blue-900 mb-1">Jam Operasional</h3>
-                        <div className="text-gray-600">
-                          <table className="table-auto">
-                            <tbody>
-                              <tr>
-                                <td className="pr-2">Senin - Jumat</td>
-                                <td>: 08:00 - 16:00</td>
-                              </tr>
-                              <tr>
-                                <td className="pr-2">Sabtu</td>
-                                <td>: 08:00 - 12:00</td>
-                              </tr>
-                              <tr>
-                                <td className="pr-2">Minggu</td>
-                                <td>: <span className="font-semibold text-red-600">Tutup</span></td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center shrink-0">
+                      <Mail className="w-5 h-5 text-cobalt" aria-hidden="true" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-sm">Email Langsung</h3>
+                      <a
+                        href="mailto:andresaputra07012019@gmail.com"
+                        className="inline-block text-sm text-foreground underline underline-offset-4 hover:text-cobalt mt-1 break-all"
+                      >
+                        andresaputra07012019@gmail.com
+                      </a>
+                    </div>
+                  </div>
 
-                <Card className="bg-gradient-to-r from-blue-600 to-blue-500 text-white border-0">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-3">
-                      Respon Cepat & Terpercaya
-                    </h3>
-                    <p className="text-blue-100 mb-4">
-                      Tim support kami berkomitmen merespons setiap pertanyaan
-                      dalam waktu maksimal 1x24 jam pada hari kerja.
-                    </p>
-                    <div className="flex items-center space-x-2 text-sm">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-blue-100">Tim support sedang online</span>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center shrink-0">
+                      <Clock className="w-5 h-5 text-cobalt" aria-hidden="true" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="w-full">
+                      <h3 className="font-semibold text-foreground text-sm mb-2">
+                        Jam Operasional Dukungan
+                      </h3>
+                      <table className="w-full text-sm text-muted-foreground">
+                        <tbody>
+                          <tr className="border-b border-border/60">
+                            <td className="py-1.5 pr-4">Senin - Jumat</td>
+                            <td className="py-1.5 font-mono text-right text-foreground">
+                              08:00 - 16:00
+                            </td>
+                          </tr>
+                          <tr className="border-b border-border/60">
+                            <td className="py-1.5 pr-4">Sabtu</td>
+                            <td className="py-1.5 font-mono text-right text-foreground">
+                              08:00 - 12:00
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-1.5 pr-4">Minggu</td>
+                            <td className="py-1.5 font-mono text-right font-semibold text-destructive">
+                              Tutup
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="hm-sheet p-6 space-y-2 border-foreground/20">
+                <p className="font-mono text-xs uppercase tracking-wider text-cobalt">
+                  WAKTU RESPONS STANDAR
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Pesan yang masuk pada jam operasional akan ditinjau oleh pengelola platform maksimal dalam 1x24 jam hari kerja.
+                </p>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="bg-blue-900 text-white py-4">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-blue-200">
-            <a
-              href="https://andresptr.site"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-white hover:underline"
-            >
-              © {new Date().getFullYear()} Andre Saputra
-            </a>.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -17,12 +17,10 @@ import {
   LockOpen,
   PenTool,
   ScanSearch,
-  Brain,
-  Languages,
   Lock
 } from 'lucide-react';
 
-export type ToolCategory = 'edit' | 'convert-to' | 'convert-from' | 'security' | 'ai';
+export type ToolCategory = 'edit' | 'convert-to' | 'convert-from' | 'security' | 'ocr';
 
 export interface ToolCategoryInfo {
   id: ToolCategory;
@@ -60,9 +58,9 @@ export const toolCategories: ToolCategoryInfo[] = [
     description: 'Lindungi, buka kunci, dan tanda tangani dokumen PDF.',
   },
   {
-    id: 'ai',
-    title: 'AI & OCR',
-    description: 'Fitur cerdas berbasis kecerdasan buatan dan pengenalan teks.',
+    id: 'ocr',
+    title: 'OCR & Ekstraksi Teks',
+    description: 'Ekstrak teks dari dokumen PDF hasil pindaian (scan) menjadi teks yang dapat disalin.',
   },
 ];
 
@@ -108,7 +106,7 @@ export const tools: Tool[] = [
   {
     slug: 'convert-to-pdf',
     title: 'Gambar ke PDF',
-    description: 'Ubah file gambar JPG/JPEG/PNG menjadi format PDF berkualitas tinggi.',
+    description: 'Ubah file gambar JPG/JPEG/PNG menjadi format PDF berkualitas.',
     icon: FileInput,
     category: 'convert-to',
   },
@@ -159,7 +157,7 @@ export const tools: Tool[] = [
   {
     slug: 'pdf-to-excel',
     title: 'PDF ke Excel',
-    description: 'Ekstrak tabel dari PDF dan konversi ke format Excel.',
+    description: 'Ekstrak tabel dari PDF dan konversi ke format Excel yang rapi.',
     icon: FileSpreadsheet,
     category: 'convert-from',
   },
@@ -189,32 +187,18 @@ export const tools: Tool[] = [
   {
     slug: 'sign-pdf',
     title: 'Tanda Tangan PDF',
-    description: 'Tambahkan tanda tangan digital ke dokumen PDF Anda.',
+    description: 'Tambahkan tanda tangan digital ke dokumen PDF.',
     icon: PenTool,
     category: 'security',
   },
 
-  // ===================== AI & OCR =====================
+  // ===================== OCR & EKSTRAKSI TEKS =====================
   {
     slug: 'ocr-pdf',
     title: 'OCR PDF',
     description: 'Ekstrak teks dari PDF hasil scan menggunakan teknologi OCR.',
     icon: ScanSearch,
-    category: 'ai',
-  },
-  {
-    slug: 'ai-summarizer',
-    title: 'AI Ringkasan PDF',
-    description: 'Buat ringkasan otomatis dari dokumen PDF menggunakan AI.',
-    icon: Brain,
-    category: 'ai',
-  },
-  {
-    slug: 'ai-translator',
-    title: 'AI Terjemahan PDF',
-    description: 'Terjemahkan konten PDF ke berbagai bahasa dengan bantuan AI.',
-    icon: Languages,
-    category: 'ai',
+    category: 'ocr',
   },
 ];
 

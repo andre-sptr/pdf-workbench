@@ -18,7 +18,7 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface MarkdownApiResult {
-  type: 'summary' | 'translation' | 'ocr' | string;
+  type: 'ocr' | string;
   markdown: string;
 }
 

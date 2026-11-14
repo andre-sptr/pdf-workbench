@@ -6,7 +6,17 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { Progress } from '@/components/ui/progress';
 import type { AxiosProgressEvent } from 'axios';
 import Dropzone from '@/components/Dropzone';
-import { FileText, X, Loader2, PenTool, Trash2, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Loader2,
+  MapPin,
+  PenTool,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { usePdfTool } from '@/hooks/usePdfTool';
 import { postFile, downloadBlob } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
@@ -17,7 +27,7 @@ export default function SignPdfTool() {
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [placement, setPlacement] = useState<{ x: number, y: number } | null>(null);
+  const [placement, setPlacement] = useState<{ x: number; y: number } | null>(null);
   const [pdfSize, setPdfSize] = useState({ width: 0, height: 0 });
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
@@ -40,13 +50,13 @@ export default function SignPdfTool() {
     };
   }, []);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = ({ numPages: totalPages }: { numPages: number }) => {
+    setNumPages(totalPages);
     setPageNumber(1);
   };
 
   const changePage = (offset: number) => {
-    setPageNumber(prevPageNumber => prevPageNumber + offset);
+    setPageNumber((prevPageNumber) => prevPageNumber + offset);
     setPlacement(null);
   };
 
@@ -110,10 +120,8 @@ export default function SignPdfTool() {
   }, [files, placement, pdfSize, pageNumber, removeFile, toast]);
 
   return (
-    <Card className="w-full shadow-none border-none">
-      <CardContent className="p-0">
-        <div className="flex flex-col min-h-[30px]" />
-
+    <Card className="w-full shadow-none border-none bg-transparent">
+      <CardContent className="p-0 space-y-6">
         {!files.length && (
           <Dropzone
             onFilesSelected={addFiles}
@@ -121,102 +129,127 @@ export default function SignPdfTool() {
             multiple={false}
             maxFiles={1}
             dropzoneText="Seret & Lepaskan PDF untuk ditandatangani di sini"
+            hint="lalu pilih posisi halaman dan gambar tanda tangan"
           />
         )}
 
         {files.length > 0 && (
-          <div className="mt-6 px-4 space-y-8">
-            <div className="flex items-center p-3 bg-blue-50 border border-blue-100 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600 mr-4" />
-              <span className="flex-grow text-sm font-medium truncate">{files[0].name}</span>
-              <Button variant="ghost" onClick={() => removeFile(0)} disabled={isProcessing}>
-                <X className="w-5 h-5 text-red-500" />
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 p-3.5 bg-background/80 border border-border rounded-xl">
+              <FileText className="w-5 h-5 text-cobalt shrink-0" aria-hidden="true" />
+              <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">
+                {files[0].name}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeFile(0)}
+                disabled={isProcessing}
+                aria-label={`Hapus file ${files[0].name}`}
+                className="min-h-[44px] min-w-[44px] rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
 
             <div className="space-y-3">
-              <h3 className="font-semibold text-blue-900 text-sm flex items-center">
-                <MapPin className="w-4 h-4 mr-2" /> 1. Pilih Halaman & Klik lokasi tanda tangan:
-              </h3>
+              <h2 className="font-semibold text-foreground text-base flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-cobalt shrink-0" aria-hidden="true" />
+                <span>1. Pilih Halaman & Klik Lokasi Tanda Tangan</span>
+              </h2>
 
               <div
-                className="relative border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-100 flex justify-center cursor-crosshair shadow-inner"
+                className="relative border border-border rounded-2xl overflow-auto bg-secondary/50 flex justify-center p-3 cursor-crosshair"
                 onClick={handlePdfClick}
               >
-                {/* Tambahkan properti onLoadSuccess pada Document */}
-                <Document file={files[0]} onLoadSuccess={onDocumentLoadSuccess}>
-                  {/* Gunakan state pageNumber untuk menentukan halaman yang dirender */}
-                  <Page
-                    pageNumber={pageNumber}
-                    width={350}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                  />
-                </Document>
+                <div className="relative inline-block">
+                  <Document file={files[0]} onLoadSuccess={onDocumentLoadSuccess}>
+                    <Page
+                      pageNumber={pageNumber}
+                      width={350}
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                    />
+                  </Document>
 
-                {placement && (
-                  <div
-                    className="absolute w-10 h-6 border-2 border-blue-500 bg-blue-400/30 rounded pointer-events-none flex items-center justify-center"
-                    style={{ left: placement.x - 20, top: placement.y - 12 }}
-                  >
-                    <div className="w-1 h-1 bg-blue-600 rounded-full" />
-                  </div>
-                )}
+                  {placement && (
+                    <div
+                      className="absolute w-10 h-6 border-2 border-[#2B3AE8] bg-[#2B3AE8]/25 rounded pointer-events-none flex items-center justify-center"
+                      style={{ left: placement.x - 20, top: placement.y - 12 }}
+                    >
+                      <div className="w-1.5 h-1.5 bg-[#2B3AE8] rounded-full" />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* --- KONTROL NAVIGASI HALAMAN --- */}
               {numPages > 1 && (
-                <div className="flex items-center justify-center gap-4 mt-2">
+                <div className="flex items-center justify-center gap-4 pt-1">
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     disabled={pageNumber <= 1 || isProcessing}
                     onClick={() => changePage(-1)}
+                    aria-label="Halaman sebelumnya"
+                    className="min-h-[44px] min-w-[44px] rounded-xl border-input"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4" aria-hidden="true" />
                   </Button>
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="font-mono text-xs sm:text-sm font-medium text-foreground">
                     Halaman {pageNumber} dari {numPages}
                   </span>
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     disabled={pageNumber >= numPages || isProcessing}
                     onClick={() => changePage(1)}
+                    aria-label="Halaman berikutnya"
+                    className="min-h-[44px] min-w-[44px] rounded-xl border-input"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4" aria-hidden="true" />
                   </Button>
                 </div>
               )}
-              {/* ---------------------------------- */}
 
-              <p className="text-[11px] text-gray-500 italic text-center mt-2">
-                {placement ? `Lokasi terpilih di halaman ${pageNumber} ✅` : "Klik pada gambar untuk menentukan posisi"}
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 mt-1">
+                {placement ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-cobalt" aria-hidden="true" />
+                    <span>Lokasi terpilih pada halaman {pageNumber}.</span>
+                  </>
+                ) : (
+                  <span>Klik pada pratinjau halaman untuk menentukan posisi tanda tangan.</span>
+                )}
               </p>
             </div>
 
             <div className="space-y-3">
-              <div className="flex justify-between items-end">
-                <h3 className="font-semibold text-blue-900 text-sm flex items-center">
-                  <PenTool className="w-4 h-4 mr-2" /> 2. Goreskan tanda tangan:
-                </h3>
+              <div className="flex flex-wrap justify-between items-center gap-2">
+                <h2 className="font-semibold text-foreground text-base flex items-center gap-2">
+                  <PenTool className="w-4 h-4 text-cobalt shrink-0" aria-hidden="true" />
+                  <span>2. Goreskan Tanda Tangan</span>
+                </h2>
                 <Button
-                  variant="ghost" size="sm"
+                  type="button"
+                  variant="outline"
                   onClick={() => sigCanvas.current?.clear()}
                   disabled={isProcessing}
-                  className="text-xs text-red-500 hover:text-red-700 h-8"
+                  className="min-h-[44px] px-3.5 text-xs text-destructive border-border hover:bg-destructive/10 hover:text-destructive rounded-xl"
                 >
-                  <Trash2 className="w-3 h-3 mr-1" /> Hapus
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                  Hapus Goresan
                 </Button>
               </div>
 
-              <div className="border-2 border-dashed border-blue-200 rounded-xl bg-white overflow-hidden">
+              <div className="border-2 border-dashed border-input rounded-2xl bg-white overflow-hidden">
                 <SignatureCanvas
                   ref={sigCanvas}
                   penColor="#000000"
-                  canvasProps={{ className: "signature-canvas w-full h-32 cursor-crosshair" }}
+                  canvasProps={{
+                    className: 'signature-canvas w-full h-36 cursor-crosshair',
+                    'aria-label': 'Kanvas tanda tangan digital',
+                  }}
                 />
               </div>
             </div>
@@ -224,25 +257,32 @@ export default function SignPdfTool() {
         )}
 
         {isProcessing && (
-          <div className="mt-4 px-4">
+          <div className="space-y-2">
             <Progress value={uploadProgress} className="h-2" />
-            <p className="text-sm text-gray-500 mt-2 text-center">Menandatangani... {uploadProgress}%</p>
+            <p className="font-mono text-xs text-muted-foreground text-center">
+              Menandatangani... {uploadProgress}%
+            </p>
           </div>
         )}
 
-        <div className="mt-8">
-          <Button
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-lg py-6"
-            onClick={handleProcess}
-            disabled={isProcessing || files.length === 0 || !placement}
-          >
-            {isProcessing ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Memproses...</>
-            ) : (
-              <><PenTool className="mr-2 h-5 w-5" /> Tanda Tangani Sekarang</>
-            )}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          className="w-full bg-primary text-primary-foreground hover:opacity-90 min-h-[48px] py-3.5 px-6 rounded-xl font-semibold text-base shadow-sm transition-opacity"
+          onClick={handleProcess}
+          disabled={isProcessing || files.length === 0 || !placement}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+              Memproses...
+            </>
+          ) : (
+            <>
+              <PenTool className="mr-2 h-5 w-5" aria-hidden="true" />
+              Tanda Tangani Sekarang
+            </>
+          )}
+        </Button>
       </CardContent>
     </Card>
   );
