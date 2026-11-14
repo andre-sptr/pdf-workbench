@@ -894,21 +894,35 @@ app.post('/api/unlock-pdf', upload.single('files'), async (req, res) => {
 });
 
 app.post('/api/sign-pdf', upload.single('files'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('Harap unggah 1 file PDF.');
+  }
+
+  const cleanup = () => {
+    safeUnlink(req.file.path);
+  };
+  res.on('finish', cleanup);
+  res.on('close', cleanup);
+
   try {
-    const { posX, posY, previewWidth, previewHeight, signature } = req.body;
+    const { posX, posY, previewWidth, previewHeight, signature, pageNumber } = req.body;
     const fileBuffer = await fsPromises.readFile(req.file.path);
     const pdfDoc = await PDFDocument.load(fileBuffer);
-    const firstPage = pdfDoc.getPages()[0];
-    const { width, height } = firstPage.getSize();
+    const pages = pdfDoc.getPages();
+    const pageIndex = Math.max(0, Math.min(pages.length - 1, (parseInt(pageNumber, 10) || 1) - 1));
+    const targetPage = pages[pageIndex];
+    const { width, height } = targetPage.getSize();
     const ratioX = width / parseFloat(previewWidth);
     const ratioY = height / parseFloat(previewHeight);
     const finalX = parseFloat(posX) * ratioX;
     const finalY = height - (parseFloat(posY) * ratioY);
     const signatureImageBytes = Buffer.from(signature.split(',')[1], 'base64');
     const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
-    const sigDims = signatureImage.scale(0.5);
+    const maxSigWidth = width * 0.22;
+    const scaleFactor = Math.min(0.5, maxSigWidth / signatureImage.width);
+    const sigDims = signatureImage.scale(scaleFactor);
 
-    firstPage.drawImage(signatureImage, {
+    targetPage.drawImage(signatureImage, {
       x: finalX - (sigDims.width / 2),
       y: finalY - (sigDims.height / 2),
       width: sigDims.width,
@@ -920,7 +934,9 @@ app.post('/api/sign-pdf', upload.single('files'), async (req, res) => {
     res.send(Buffer.from(signedPdfBytes));
   } catch (error) {
     console.error(error);
-    res.status(500).send('Gagal.');
+    if (!res.headersSent) {
+      res.status(500).send('Gagal.');
+    }
   }
 });
 

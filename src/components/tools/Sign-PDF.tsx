@@ -23,6 +23,65 @@ import { useToast } from '@/components/ui/use-toast';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+function getCroppedSignatureDataUrl(sourceCanvas: HTMLCanvasElement): string {
+  const { width, height } = sourceCanvas;
+  const ctx = sourceCanvas.getContext('2d');
+  if (!ctx || width === 0 || height === 0) {
+    return sourceCanvas.toDataURL('image/png');
+  }
+
+  const imageData = ctx.getImageData(0, 0, width, height).data;
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const alpha = imageData[(y * width + x) * 4 + 3];
+      if (alpha > 0) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return sourceCanvas.toDataURL('image/png');
+  }
+
+  const padding = 8;
+  const cropX = Math.max(0, minX - padding);
+  const cropY = Math.max(0, minY - padding);
+  const cropRight = Math.min(width - 1, maxX + padding);
+  const cropBottom = Math.min(height - 1, maxY + padding);
+  const cropWidth = cropRight - cropX + 1;
+  const cropHeight = cropBottom - cropY + 1;
+
+  const croppedCanvas = document.createElement('canvas');
+  croppedCanvas.width = cropWidth;
+  croppedCanvas.height = cropHeight;
+  const croppedCtx = croppedCanvas.getContext('2d');
+  if (!croppedCtx) {
+    return sourceCanvas.toDataURL('image/png');
+  }
+
+  croppedCtx.drawImage(
+    sourceCanvas,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    cropWidth,
+    cropHeight
+  );
+  return croppedCanvas.toDataURL('image/png');
+}
+
 export default function SignPdfTool() {
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,9 +120,15 @@ export default function SignPdfTool() {
   };
 
   const handlePdfClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const targetEl = e.currentTarget.querySelector('canvas') ?? e.currentTarget;
+    const rect = targetEl.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+      return;
+    }
+
     setPlacement({ x, y });
     setPdfSize({ width: rect.width, height: rect.height });
   };
@@ -85,7 +150,7 @@ export default function SignPdfTool() {
     abortControllerRef.current = new AbortController();
 
     const canvas = sigCanvas.current?.getCanvas();
-    const signatureData = canvas ? canvas.toDataURL('image/png') : '';
+    const signatureData = canvas ? getCroppedSignatureDataUrl(canvas) : '';
 
     const formData = new FormData();
     formData.append('files', files[0]);
@@ -159,11 +224,11 @@ export default function SignPdfTool() {
                 <span>1. Pilih Halaman & Klik Lokasi Tanda Tangan</span>
               </h2>
 
-              <div
-                className="relative border border-border rounded-2xl overflow-auto bg-secondary/50 flex justify-center p-3 cursor-crosshair"
-                onClick={handlePdfClick}
-              >
-                <div className="relative inline-block">
+              <div className="relative border border-border rounded-2xl overflow-auto bg-secondary/50 flex justify-center p-3">
+                <div
+                  className="relative inline-block leading-none cursor-crosshair select-none"
+                  onClick={handlePdfClick}
+                >
                   <Document file={files[0]} onLoadSuccess={onDocumentLoadSuccess}>
                     <Page
                       pageNumber={pageNumber}
@@ -175,8 +240,8 @@ export default function SignPdfTool() {
 
                   {placement && (
                     <div
-                      className="absolute w-10 h-6 border-2 border-[#2B3AE8] bg-[#2B3AE8]/25 rounded pointer-events-none flex items-center justify-center"
-                      style={{ left: placement.x - 20, top: placement.y - 12 }}
+                      className="absolute w-10 h-6 border-2 border-[#2B3AE8] bg-[#2B3AE8]/25 rounded pointer-events-none flex items-center justify-center -translate-x-1/2 -translate-y-1/2 z-10"
+                      style={{ left: `${placement.x}px`, top: `${placement.y}px` }}
                     >
                       <div className="w-1.5 h-1.5 bg-[#2B3AE8] rounded-full" />
                     </div>
